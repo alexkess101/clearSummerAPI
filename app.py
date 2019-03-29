@@ -14,77 +14,76 @@ bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
 class User(db.Model):
+    __tablename__="user"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), unique=True, nullable=False)
-    goals = db.relationship('Goals', backref='User', lazy=True)
-    income = db.relationship('Income', backref='User', lazy=True)
-    expenses = db.relationship('Expenses', backref='User', lazy=True)
+    password = db.Column(db.String(120), nullable=False)
+    num_sales_goal = db.Column(db.Integer, nullable=False)
+    income_total = db.Column(db.Integer, nullable=False)
+    commission_percentage = db.Column(db.Float, nullable=False)
+    signing_bonuses = db.Column(db.Integer, nullable=True)
+    incentives = db.Column(db.Integer, nullable=True)
+    expenses = db.Column(db.Integer, nullable=True)
+    
 
-    def __init__(self, email, password):
+    def __init__(self, email, password, num_sales_goal, income_total, commission_percentage, signing_bonuses, incentives, expenses):
         self.email = email
         self.password = password
+        self.num_sales_goal = num_sales_goal
+        self.income_total = income_total
+        self.commission_percentage = commission_percentage
+        self.signing_bonuses = signing_bonuses
+        self.incentives = incentives
+        self.expenses = expenses
 
     def __repr__(self):
         return '<Title %r>' % self.title
 
-class Goals(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    num_sales_goal = db.Column(db.Integer, nullable=False)
-    income_total = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-
-    def __init__(self, num_sales_goal, income_total, user_id):
-        self.num_sales_goal = num_sales_goal
-        self.income_total = income_total
-        self.user_id = user_id
 
 
-class Income(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    commission_percentage = db.Column(db.Integer, nullable=False)
-    signing_bonuses = db.Column(db.Integer, nullable=True)
-    incentives = db.Column(db.Integer, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
 
-    def __init__(self, commission_percentage, incentives, user_id):
-        self.commission_percentage = commission_percentage
-        self.incentives = incentives
-        self.user_id = user_id
-
-class Expenses(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    rent = db.Column(db.Integer, nullable=True)
-    other_expenses = db.Column(db.Integer, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-
-    def __init__(self, rent, other_expenses, user_id):
-        self.rent = rent
-        self.other_expenses = other_expenses
-        self.user_id = user_id
 
 
 @app.route('/')
 def home():
     return "<h1>Jchillin</h1>"
 
-@app.route('/user/input', methods=['POST'])
+@app.route('/user/new', methods=['POST'])
 def User_input():
     if request.content_type == 'application/json':
         post_data = request.get_json()
         email = post_data.get('email')
         password = post_data.get('password')
+        
 
-        reg = User(email, password)
-        db.session.add(reg)
+        commission_percentage = post_data.get('commission_percentage')
+        signing_bonuses = post_data.get('signing_bonuses')
+        incentives = post_data.get('incentives')
+
+        num_sales_goal = post_data.get('num_sales_goal')
+        income_total = post_data.get('income_total')
+
+        user = User(email, password)
+
+        db.session.add(user)
         db.session.commit()
-        return jsonify("User Added")
+        return jsonify("Everything has worked correctly")
     return jsonify("Something went wrong with adding a user")
 
-@app.route('/users', methods=['GET'])
+
+@app.route('/login', methods=['GET'])
 def get_users():
-    users = db.session.query(User.email, User.password).all()
+    users = db.session.query(User.id, User.email, User.password).all()
     return jsonify(users)
+
+@app.route('/user/delete/<id>', methods=['DELETE'])
+def delete_user(id):
+    user = db.session.query(User).get(id)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify("User deleted")
+
+
         
 
 
