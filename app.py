@@ -48,23 +48,20 @@ class User(db.Model):
 def home():
     return "<h1>Jchillin</h1>"
 
-@app.route('/user/new', methods=['POST'])
+@app.route('/login/new_user', methods=['POST'])
 def User_input():
     if request.content_type == 'application/json':
         post_data = request.get_json()
         email = post_data.get('email')
         password = post_data.get('password')
-        
-
+        num_sales_goal = post_data.get('num_sales_goal')
         commission_percentage = post_data.get('commission_percentage')
         signing_bonuses = post_data.get('signing_bonuses')
         incentives = post_data.get('incentives')
-
-        num_sales_goal = post_data.get('num_sales_goal')
         income_total = post_data.get('income_total')
+        expenses = post_data.get('expenses')
 
-        user = User(email, password)
-
+        user = User(email, password, num_sales_goal, commission_percentage, signing_bonuses, incentives, income_total, expenses)
         db.session.add(user)
         db.session.commit()
         return jsonify("Everything has worked correctly")
@@ -73,7 +70,7 @@ def User_input():
 
 @app.route('/login', methods=['GET'])
 def get_users():
-    users = db.session.query(User.id, User.email, User.password).all()
+    users = db.session.query(User.id, User.email, User.password, User.num_sales_goal, User.commission_percentage, User.signing_bonuses, User.incentives, User.income_total, User.expenses).all()
     return jsonify(users)
 
 @app.route('/user/delete/<id>', methods=['DELETE'])
