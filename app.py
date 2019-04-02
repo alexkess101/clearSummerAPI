@@ -95,7 +95,7 @@ class IncentiveHistory(db.Model):
 def home():
     return "<h1>Jchillin</h1>"
 
-@app.route('/login/new_user', methods=['POST'])
+@app.route('/new_user', methods=['POST'])
 def User_input():
     if request.content_type == 'application/json':
         post_data = request.get_json()
