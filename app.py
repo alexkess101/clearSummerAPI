@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_heroku import Heroku
 from flask_bcrypt import Bcrypt
 from datetime import datetime
+from statistics import mean
 
 
 app = Flask(__name__)
@@ -103,21 +104,27 @@ def User_input():
         password = post_data.get('password')
         current_sales = post_data.get('current_sales')
         num_sales_goal = post_data.get('num_sales_goal')
-        income_current = post_data.get('income_total')
+        income_current = post_data.get('income_current')
         income_total = post_data.get('income_total')
         commission_percentage = post_data.get('commission_percentage')
     
         user = User(email, password, current_sales, num_sales_goal, income_current, income_total, commission_percentage)
         db.session.add(user)
         db.session.commit()
-        return jsonify("Everything has worked correctly")
+
+        new_user = db.session.query(User.id, User.email, User.password).filter(User.email == email).all()
+        return jsonify(new_user)
     return jsonify("Something went wrong with adding a user")
 
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST'])
 def get_users():
-    users = db.session.query(User.id, User.email, User.password, User.current_sales, User.num_sales_goal, User.income_current, User.income_total, User.commission_percentage).all()
-    return jsonify(users)
+    post_data = request.get_json()
+    post_email = post_data.get('email')
+    post_password = post_data.get('password')
+    verified_user = db.session.query(User.id, User.email, User.password).filter(User.email == post_email).all()
+    
+    return jsonify(verified_user)
 
 @app.route('/user/delete/<id>', methods=['DELETE'])
 def delete_user(id):
@@ -153,6 +160,18 @@ def get_all_sale():
     sale = db.session.query(SaleHistory.id, SaleHistory.date_created, SaleHistory.account_name_first, SaleHistory.account_name_last, SaleHistory.account_value, SaleHistory.user_id).all()
     return jsonify(sale)
 
+@app.route('/home/<id>', methods=['GET'])
+def get_user_info(id):
+    total_income_goal = db.session.query(User.income_total).filter(User.id == id).first()
+    income_current = db.session.query(User.income_current).filter(User.id == id).first()
+
+    num_sales_goal = db.session.query(User.num_sales_goal).filter(User.id == id).first()
+    num_sales = db.session.query(SaleHistory).filter(SaleHistory.user_id == id).count()
+    # num_sales_avg = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).avg()
+    value_sales = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).all()
+    
+
+    return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales)
 
 
 
