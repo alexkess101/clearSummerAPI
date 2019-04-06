@@ -134,16 +134,20 @@ def delete_user(id):
     return jsonify("User deleted")
 
 
-@app.route('/sale/create', methods=['POST'])
-def post_sale():
+@app.route('/sale/create/<id>', methods=['POST', 'POST'])
+def post_sale(id):
     if request.content_type == 'application/json':
         post_data = request.get_json()
         account_name_first = post_data.get('account_name_first')
         account_name_last = post_data.get('account_name_last')
         account_value = post_data.get('account_value')
-        user_id = post_data.get('user_id')
+        user = db.session.query(User).get(id)
+        
+        add_income = account_value * user.commission_percentage
+        current_sales = db.session.query(User).get(id)
+        current_sales.income_current = current_sales.income_current + add_income
 
-        reg = SaleHistory(account_name_first, account_name_last, account_value, user_id)
+        reg = SaleHistory(account_name_first, account_name_last, account_value, id)
         db.session.add(reg)
         db.session.commit()
         return jsonify("Everything has worked correctly")
@@ -167,11 +171,11 @@ def get_user_info(id):
 
     num_sales_goal = db.session.query(User.num_sales_goal).filter(User.id == id).first()
     num_sales = db.session.query(SaleHistory).filter(SaleHistory.user_id == id).count()
-    # num_sales_avg = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).avg()
+    user_commission_value = db.session.query(User.commission_percentage).filter(User.id == id).first()
     value_sales = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).all()
     
 
-    return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales)
+    return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales, user_commission_value)
 
 
 
