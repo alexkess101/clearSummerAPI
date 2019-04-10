@@ -21,6 +21,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=True)
     current_sales = db.Column(db.Integer, nullable=False)
     num_sales_goal = db.Column(db.Integer, nullable=False)
     income_current = db.Column(db.Integer, nullable=False)
@@ -30,9 +32,11 @@ class User(db.Model):
     saleHistory = db.relationship('SaleHistory', backref='user', lazy=True)
     incentiveHistory = db.relationship('IncentiveHistory', backref='user', lazy=True)
 
-    def __init__(self, email, password, current_sales, num_sales_goal, income_current, income_total, commission_percentage):
+    def __init__(self, email, password, start_date, end_date, current_sales, num_sales_goal, income_current, income_total, commission_percentage):
         self.email = email
         self.password = password
+        self.start_date = start_date
+        self.end_date = end_date
         self.current_sales = current_sales
         self.num_sales_goal = num_sales_goal
         self.income_current = income_current
@@ -96,25 +100,33 @@ class IncentiveHistory(db.Model):
 def home():
     return "<h1>Jchillin</h1>"
 
+@app.route('/all_users', methods=['GET'])
+def get_all_users():
+    verified_user = db.session.query(User.id, User.email, User.password, User.start_date, User.end_date, User.commission_percentage).all()
+    return jsonify(verified_user)
+
 @app.route('/new_user', methods=['POST'])
 def User_input():
     if request.content_type == 'application/json':
         post_data = request.get_json()
         email = post_data.get('email')
         password = post_data.get('password')
+        start_date = post_data.get('start_date')
+        end_date = post_data.get('end_date')
         current_sales = post_data.get('current_sales')
         num_sales_goal = post_data.get('num_sales_goal')
         income_current = post_data.get('income_current')
         income_total = post_data.get('income_total')
         commission_percentage = post_data.get('commission_percentage')
     
-        user = User(email, password, current_sales, num_sales_goal, income_current, income_total, commission_percentage)
+        user = User(email, password, start_date, end_date, current_sales, num_sales_goal, income_current, income_total, commission_percentage)
         db.session.add(user)
         db.session.commit()
 
         new_user = db.session.query(User.id, User.email, User.password).filter(User.email == email).all()
         return jsonify(new_user)
     return jsonify("Something went wrong with adding a user")
+
 
 
 @app.route('/login', methods=['POST'])
@@ -134,7 +146,7 @@ def delete_user(id):
     return jsonify("User deleted")
 
 
-@app.route('/sale/create/<id>', methods=['POST', 'POST'])
+@app.route('/home/<id>/create_sale', methods=['POST'])
 def post_sale(id):
     if request.content_type == 'application/json':
         post_data = request.get_json()
@@ -153,9 +165,9 @@ def post_sale(id):
         return jsonify("Everything has worked correctly")
     return jsonify("Something went wrong with adding a sale")
 
-@app.route('/sale/<id>', methods=['GET'])
+@app.route('/sale/<id>/view_sales', methods=['GET'])
 def get_sale(id):
-    sale = db.session.query(SaleHistory.id, SaleHistory.date_created, SaleHistory.account_name_first, SaleHistory.account_name_last, SaleHistory.account_value).filter(SaleHistory.user_id==id).order_by(SaleHistory.date_created).all()
+    sale = db.session.query(SaleHistory.id, SaleHistory.date_created, SaleHistory.account_name_first, SaleHistory.account_name_last, SaleHistory.account_value).filter(SaleHistory.user_id==id).order_by(SaleHistory.date_created.desc()).all()
     return jsonify(sale)
 
 
@@ -168,7 +180,6 @@ def get_all_sale():
 def get_user_info(id):
     total_income_goal = db.session.query(User.income_total).filter(User.id == id).first()
     income_current = db.session.query(User.income_current).filter(User.id == id).first()
-
     num_sales_goal = db.session.query(User.num_sales_goal).filter(User.id == id).first()
     num_sales = db.session.query(SaleHistory).filter(SaleHistory.user_id == id).count()
     user_commission_value = db.session.query(User.commission_percentage).filter(User.id == id).first()
