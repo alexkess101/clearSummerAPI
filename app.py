@@ -184,9 +184,12 @@ def get_user_info(id):
     num_sales = db.session.query(SaleHistory).filter(SaleHistory.user_id == id).count()
     user_commission_value = db.session.query(User.commission_percentage).filter(User.id == id).first()
     value_sales = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).all()
+    start_date = db.session.query(User.start_date).filter(User.id == id).first()
+    end_date = db.session.query(User.end_date).filter(User.id == id).first()
+    
     
 
-    return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales, user_commission_value)
+    return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales, user_commission_value, start_date, end_date)
 
 
 
