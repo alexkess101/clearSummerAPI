@@ -186,10 +186,32 @@ def get_user_info(id):
     value_sales = db.session.query(SaleHistory.account_value).filter(SaleHistory.user_id ==id).all()
     start_date = db.session.query(User.start_date).filter(User.id == id).first()
     end_date = db.session.query(User.end_date).filter(User.id == id).first()
-    
-    
 
     return jsonify(total_income_goal, income_current, num_sales_goal, num_sales, value_sales, user_commission_value, start_date, end_date)
+
+
+@app.route('/settings/<id>', methods=['PUT'])
+def change_user_settings(id):
+    if request.content_type == 'application/json':
+        post_data = request.get_json()
+        start_date = post_data.get('start_date')
+        end_date = post_data.get('end_date')
+        num_sales_goal = post_data.get('num_sales_goal')
+        income_total = post_data.get('income_total')
+        commission_percentage = post_data.get('commission_percentage')
+        user = db.session.query(User).get(id)
+        user.start_date = start_date
+        user.end_date = end_date
+        user.num_sales_goal = num_sales_goal
+        user.income_total = income_total
+        user.commission_percentage = commission_percentage
+        db.session.commit()
+
+        return jsonify("update complete")
+    return jsonify("something went wrong with the update")
+
+
+
 
 
 
